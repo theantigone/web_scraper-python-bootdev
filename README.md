@@ -10,5 +10,16 @@
 1. install the dependencies for this web crawler:
 
 ```sh
+uv sync # recommended
+```
+
+2. alternatively, you can use the `pip` equivalent:
+
+```sh
 uv pip install -r requirements.txt
 ```
+
+# dates
+
+- start date: `5/26/2026`
+- end date  : ``
