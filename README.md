@@ -7,13 +7,13 @@
 
 # getting started
 
-1. install the dependencies for this web crawler:
+install the dependencies for this web crawler:
 
 ```sh
 uv sync # recommended
 ```
 
-2. alternatively, you can use the `pip` equivalent:
+alternatively, you can use the `pip` equivalent:
 
 ```sh
 uv pip install -r requirements.txt
@@ -23,3 +23,21 @@ uv pip install -r requirements.txt
 
 - start date: `5/26/2026`
 - end date  : ``
+
+=======
+
+# running tests
+
+to run all tests, run:
+
+```sh
+uv run -m unittest
+```
+
+for a verbose output (to see all of the tests individually in the shell):
+
+```sh
+uv run -m unittest -v
+```
+
+this command will execute all files that start with `test`
