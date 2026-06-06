@@ -19,12 +19,14 @@ def main():
     print(f"starting crawl of: {base_url}...")
 
     try:
-        html = crawl_page(base_url)
+        html = crawl_page(base_url, base_url)
     except Exception as e:
         print(f"Error fetching HTML from {base_url}: {str(e)}")
         sys.exit(1)
 
-    print("number of pages found:", html)
+    print("number of pages found:", len(html))
+    for i, rich_page_data in enumerate(html, start=1):
+        print("dictionary value", i, ":", rich_page_data)
 
     sys.exit(0)
 

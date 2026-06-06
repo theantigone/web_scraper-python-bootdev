@@ -104,13 +104,15 @@ def get_html(url: str) -> str:
 
 def crawl_page(base_url, current_url=None, page_data=None):
     if urlparse(current_url).hostname != urlparse(base_url).hostname:
-        return
+        return page_data
     normalized_url = normalize_url(current_url)
+    if not page_data:
+        page_data = {}
     if normalized_url in page_data.keys():
-        return
+        return page_data
     html_response = get_html(current_url)
     print(html_response)
-    rich_page_data = extract_page_data(html_response)
+    rich_page_data = extract_page_data(html_response, current_url)
     page_data[normalized_url] = rich_page_data
     urls = get_urls_from_html(html_response, base_url)
     for url in urls:
