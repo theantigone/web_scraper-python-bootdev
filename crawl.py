@@ -88,7 +88,7 @@ def extract_page_data(html: str, page_url: str) -> PageData:
 
 def get_html(url: str) -> str:
     try:
-        response = requests.get(url, headers={"User-Agent": "BootCrawler/1.0"})
+        response = requests.get(url)
     except Exception as e:
         raise Exception(f"network error while fetching {url}: {e}")
 
@@ -102,18 +102,44 @@ def get_html(url: str) -> str:
     return response.text
 
 
-def crawl_page(base_url, current_url=None, page_data=None):
-    if urlparse(current_url).hostname != urlparse(base_url).hostname:
-        return page_data
-    normalized_url = normalize_url(current_url)
-    if not page_data:
+def crawl_page(
+    base_url: str,
+    current_url: str | None = None,
+    page_data: dict[str, PageData] | None = None,
+) -> dict[str, PageData]:
+    if current_url is None:
+        current_url = base_url
+    if page_data is None:
         page_data = {}
-    if normalized_url in page_data.keys():
+
+    base_url_obj = urlparse(base_url)
+    current_url_obj = urlparse(current_url)
+    if current_url_obj.netloc != base_url_obj.netloc:
         return page_data
-    html_response = get_html(current_url)
-    print(html_response)
-    rich_page_data = extract_page_data(html_response, current_url)
-    page_data[normalized_url] = rich_page_data
-    urls = get_urls_from_html(html_response, base_url)
-    for url in urls:
-        crawl_page(base_url, url, page_data)
+
+    normalized_url = normalize_url(current_url)
+
+    if normalized_url in page_data:
+        return page_data
+
+    print(f"crawling {current_url}")
+    html = safe_get_html(current_url)
+    if html is None:
+        return page_data
+
+    page_info = extract_page_data(html, current_url)
+    page_data[normalized_url] = page_info
+
+    next_urls = get_urls_from_html(html, base_url)
+    for next_url in next_urls:
+        page_data = crawl_page(base_url, next_url, page_data)
+
+    return page_data
+
+
+def safe_get_html(url: str) -> str | None:
+    try:
+        return get_html(url)
+    except Exception as e:
+        print(f"{e}")
+        return None

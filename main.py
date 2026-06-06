@@ -3,9 +3,7 @@ import sys
 from crawl import crawl_page
 
 
-def main():
-    print("Hello from web-scraper-python-bootdev!")
-
+def main() -> None:
     args = sys.argv
     if len(args) < 2:
         print("no website provided")
@@ -18,15 +16,11 @@ def main():
 
     print(f"starting crawl of: {base_url}...")
 
-    try:
-        html = crawl_page(base_url, base_url)
-    except Exception as e:
-        print(f"Error fetching HTML from {base_url}: {str(e)}")
-        sys.exit(1)
+    page_data = crawl_page(base_url)
 
-    print("number of pages found:", len(html))
-    for i, rich_page_data in enumerate(html, start=1):
-        print("dictionary value", i, ":", rich_page_data)
+    print(f"Found {len(page_data)} pages:")
+    for page in page_data.values():
+        print(f"- {page['url']}: {len(page['outgoing_links'])} outgoing links")
 
     sys.exit(0)
 
