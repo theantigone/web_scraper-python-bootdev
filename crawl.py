@@ -1,6 +1,7 @@
 from typing import TypedDict
 from urllib.parse import urljoin, urlparse
 
+import aiohttp
 import requests
 from bs4 import BeautifulSoup, Tag
 
@@ -102,44 +103,79 @@ def get_html(url: str) -> str:
     return response.text
 
 
-def crawl_page(
-    base_url: str,
-    current_url: str | None = None,
-    page_data: dict[str, PageData] | None = None,
-) -> dict[str, PageData]:
-    if current_url is None:
-        current_url = base_url
-    if page_data is None:
-        page_data = {}
-
-    base_url_obj = urlparse(base_url)
-    current_url_obj = urlparse(current_url)
-    if current_url_obj.netloc != base_url_obj.netloc:
-        return page_data
-
-    normalized_url = normalize_url(current_url)
-
-    if normalized_url in page_data:
-        return page_data
-
-    print(f"crawling {current_url}")
-    html = safe_get_html(current_url)
-    if html is None:
-        return page_data
-
-    page_info = extract_page_data(html, current_url)
-    page_data[normalized_url] = page_info
-
-    next_urls = get_urls_from_html(html, base_url)
-    for next_url in next_urls:
-        page_data = crawl_page(base_url, next_url, page_data)
-
-    return page_data
-
-
 def safe_get_html(url: str) -> str | None:
     try:
         return get_html(url)
     except Exception as e:
         print(f"{e}")
         return None
+
+
+class AsyncCrawler:
+    def __init__(
+        self,
+        base_url,
+        base_domain,
+        page_data,
+        lock,
+        max_concurrency,
+        semaphore,
+        session,
+    ):
+        self.base_url = base_url
+        self.base_domain = base_domain
+        self.page_data = page_data
+        self.lock = lock
+        self.max_concurrency = max_concurrency
+        self.semaphore = semaphore
+        self.session = session
+
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.session.close()
+
+    async def add_page_visit(self, normalized_url):
+        async with self.lock:
+            if normalized_url in self.page_data:
+                return False
+            return True
+
+    async def crawl_page(
+        self,
+        base_url: str,
+        current_url: str | None = None,
+        page_data: dict[str, PageData] | None = None,
+    ) -> dict[str, PageData]:
+        if current_url is None:
+            current_url = base_url
+        if page_data is None:
+            page_data = {}
+
+        base_url_obj = urlparse(base_url)
+        current_url_obj = urlparse(current_url)
+        if current_url_obj.netloc != base_url_obj.netloc:
+            return page_data
+
+        normalized_url = normalize_url(current_url)
+
+        await add_page_visit(self, normalized_url)
+
+        if normalized_url in page_data:
+            return page_data
+
+        print(f"crawling {current_url}")
+        html = safe_get_html(current_url)
+        if html is None:
+            return page_data
+
+        page_info = extract_page_data(html, current_url)
+        page_data[normalized_url] = page_info
+
+        next_urls = get_urls_from_html(html, base_url)
+        for next_url in next_urls:
+            page_data = crawl_page(self, base_url, next_url, page_data)
+
+        return page_data
