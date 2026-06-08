@@ -40,7 +40,7 @@ uv run main.py https://learnwebscraping.dev/practice/ecommerce/ 3 10
 # dates
 
 - start date: `5/26/2026`
-- end date  : ``
+- end date  : `6/8/2026 3:27 PM EST`
 
 =======
 
